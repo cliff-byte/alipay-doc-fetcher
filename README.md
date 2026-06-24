@@ -60,23 +60,24 @@ npm install && npx playwright install chromium
 node scripts/fetch-alipay-docs.cjs --url "https://opendocs.alipay.com/open/07kszv" --name 01-权限集介绍 --out ./alipay-docs/消费者投诉
 ```
 
-批量（推荐）：
+批量（推荐）：自己建一个 config 文件（如 `urls.json`），内容为 JSON 数组：
+```json
+[
+  { "name": "01-权限集介绍", "url": "https://opendocs.alipay.com/open/07kszv?pathHash=af92d9c3" },
+  { "name": "退款查询", "url": "https://opendocs.alipay.com/open/c1cb8815_alipay.trade.fastpay.refund.query" }
+]
+```
+`name` 可省略（缺省用页面 H1 生成文件名）。然后：
 ```bash
-node scripts/fetch-alipay-docs.cjs --config examples/urls.example.json --out ./alipay-docs/消费者投诉
+node scripts/fetch-alipay-docs.cjs --config urls.json --out ./alipay-docs/消费者投诉
 ```
 
 > `--out` 缺省为当前目录下的 `./alipay-docs`。作为全局安装的 Skill 使用时，请在你的项目目录下用脚本绝对路径调用，详见上方 SKILL.md 指引。
 
-`config` 为 JSON 数组：
-```json
-[{ "name": "01-权限集介绍", "url": "https://opendocs.alipay.com/open/07kszv?pathHash=af92d9c3" }]
-```
-`name` 可省略（缺省用页面 H1 生成文件名）。
-
 ## 产出
 
 ```
-output/
+<out>/                 # 默认 ./alipay-docs（建议按产品分子目录）
 ├── <name>.md          # 每篇文档
 └── images/            # 文档页正文图片（<name>-<idx>.png）
 ```
@@ -116,7 +117,6 @@ skills/fetch-alipay-doc/          # 自包含 Skill（npx skills 自动探测并
 │       ├── util.cjs              # 文件名 slug / 去重
 │       ├── paths.cjs             # 输出落点护栏
 │       └── *.test.cjs            # 各模块零依赖单测（node:test）
-└── examples/urls.example.json
 
 PLAYBOOK.md                       # 维护者经验手册（仓库根，不随 Skill 安装分发）
 ```

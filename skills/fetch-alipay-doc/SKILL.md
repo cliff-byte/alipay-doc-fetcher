@@ -21,7 +21,7 @@ description: 抓取支付宝开放平台文档（opendocs.alipay.com / opendoc.a
    (cd "$SKILL" && npm install && npx playwright install chromium)   # 若已全局安装 playwright 可跳过
    ```
 
-2. 收集要抓的 URL。多篇时写一个 config JSON（`[{ "name": "...", "url": "..." }]`），`name` 决定输出文件名（可省略，缺省用页面 H1）。参考 `$SKILL/examples/urls.example.json`。
+2. 收集要抓的 URL。多篇时写一个 config JSON 文件（如 `urls.json`），内容为数组 `[{ "name": "...", "url": "..." }, ...]`，`name` 决定输出文件名（可省略，缺省用页面 H1）。
 
 3. **在用户当前项目目录下运行**（用绝对路径调脚本，产物落到项目内、对用户可见）。**不要 `cd` 进 `$SKILL` 再跑**——那会把文档写进 skill 安装目录（工具会拒绝）。输出用 `--out` 指定到项目内，按产品/主题分目录：
    ```bash
