@@ -1,4 +1,5 @@
 node_modules/
 output/
+alipay-docs/
 .DS_Store
 *.log

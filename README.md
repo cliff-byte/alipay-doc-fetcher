@@ -1,6 +1,14 @@
 # alipay-doc-fetcher
 
+![Node](https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white)
+![Playwright](https://img.shields.io/badge/Playwright-%5E1.40-2EAD33?logo=playwright&logoColor=white)
+![curl](https://img.shields.io/badge/runtime-curl-073551?logo=curl&logoColor=white)
+![Agent Skill](https://img.shields.io/badge/Agent%20Skill-npx%20skills-5A4FCF)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 把 JS 渲染的**支付宝开放平台文档**（`opendocs.alipay.com` / `opendoc.alipay.com`）抓取为对**编程 Agent 友好**的 Markdown —— 含标准代码块、层级化接口参数、表格、本地图片。
+
+> 依赖：**Node ≥ 18**、**Playwright**（`^1.40`，需 `npx playwright install chromium`）、系统 **curl**（图片下载）。
 
 ## 为什么需要它
 
