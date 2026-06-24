@@ -144,13 +144,13 @@ API 参数默认展开（显示「收起所有属性」），但**枚举值**被
 - 请求示例固定取 Java（E4 多语言示例可选未做）。
 - 跨平台代码已就绪（`npm root -g` + `path.join` 解析 chromium、curl→fetch 兜底下图），但仅 macOS 实测过。
 
-> 已消解的局限（v0.3）：异常示例响应已抓（E1，`fetch.cjs` 点「异常示例」tab）；公共错误码已内联（E2，CLI 惰性抓 `common/02km9f` 缓存后内联，见 `render.cjs` 的 `commonErrorTables`）。
+> 已消解的局限（v0.3）：异常示例响应已抓（E1，`fetch.cjs` 点「异常示例」tab）。
 
 ### 4.1 E1 异常示例（实现要点）
 响应示例区有「正常示例 / 异常示例」两个 tab（`labelContainer___*`），默认只显示正常。做法：主提取拿到正常 JSON 后，Playwright 点「异常示例」tab，再读当前 `pre.language-json`，与正常 JSON 去重后作为 `{abnormal:true}` 注入对应 section，渲染为 `### 响应示例-异常`。
 
-### 4.2 E2 内联公共错误码（实现要点）
-API 页「公共错误码」段只给 `common/02km9f` 外链。CLI 检测到该链接时**惰性抓一次**全局错误码页（doc 型，取其 `tables`），缓存（`commonErr`：undefined/null/array 三态）后传入 `renderMarkdown` 的 `opts.commonErrorTables`，渲染层用内联表格替代外链。公共错误码是标准固定集（约 60 行），每 API 页内联使文档离线自洽。
+### 4.2 公共错误码：保留超链接，不内联（设计决定）
+曾实现过 E2「内联公共错误码」（抓 `common/02km9f` 内联表格），但**已回退**：公共错误码是各接口**通用的同一套**，每篇 API 都内联会大量重复、徒增 token。改为在「公共错误码」段渲染一句通用说明 + 可追溯的 Markdown 超链接（`render.cjs`，靠 `sec.link`，而 `sec.link` 靠 linkify 对「前往查看」的例外保留）。需要时 Agent 可顺链接自行拉取并本地存一份。
 
 ---
 

@@ -1,6 +1,6 @@
 {
   "name": "alipay-doc-fetcher",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "把 JS 渲染的支付宝开放平台文档（opendocs/opendoc）抓取为对编程 Agent 友好的 Markdown（含代码块、参数层级、表格、图片）。",
   "keywords": [
     "alipay",

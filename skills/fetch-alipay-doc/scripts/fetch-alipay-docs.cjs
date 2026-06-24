@@ -68,17 +68,6 @@ async function downloadImage(url, dest) {
   } catch (e) { return false; }
 }
 
-// E2：抓全局公共错误码页（一次，缓存），返回各表格 rows 数组用于内联
-async function fetchCommonErrorTable(browser, url) {
-  try {
-    const data = await fetchWithRetry(browser, url);
-    if (data && data.type === 'doc' && Array.isArray(data.tables) && data.tables.length) {
-      return data.tables.map(t => t.rows);
-    }
-  } catch (e) {}
-  return null;
-}
-
 async function main() {
   const args = parseArgs(process.argv);
 
@@ -124,7 +113,6 @@ async function main() {
   const failed = [];     // { url, reason } —— 抓取失败的篇目
   const imgFails = [];   // 'name-idx.png' —— 下载失败、不会出现在 Markdown 里的图片
   let okCount = 0, warnCount = 0;
-  let commonErr = undefined;  // E2 公共错误码表缓存：undefined=未抓 / null=抓取失败 / array=已缓存
 
   for (const job of jobs) {
     let data;
@@ -146,17 +134,7 @@ async function main() {
       }
     }
 
-    // E2：API 页若引用公共错误码全局页，惰性抓取一次并缓存，用于内联
-    let commonErrorTables = null;
-    if (data.type === 'api') {
-      const link = (data.sections || []).map(s => s.link).find(l => l && /common\/02km9f/.test(l));
-      if (link) {
-        if (commonErr === undefined) { console.log('  ↳ 抓取公共错误码全局页以内联…'); commonErr = await fetchCommonErrorTable(browser, link); }
-        commonErrorTables = commonErr;
-      }
-    }
-
-    const md = renderMarkdown(data, { imageExists: (fn) => downloaded.has(fn), commonErrorTables });
+    const md = renderMarkdown(data, { imageExists: (fn) => downloaded.has(fn) });
     fs.writeFileSync(path.join(outDir, `${name}.md`), md);
     const summary = data.type === 'doc'
       ? `doc, ${(data.imgs || []).length} 图, ${(data.codes || []).length} 代码块, ${(data.tables || []).length} 表`

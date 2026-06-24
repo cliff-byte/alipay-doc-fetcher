@@ -19,7 +19,7 @@
 - [x] **全文档超链接保留**（v0.3.2）：提取前统一 `linkify`，把 `<a href>` 转 `[文字](绝对URL)`，覆盖正文/表格/业务参数描述；「前往查看」保留供 E2 检测。
 - [x] **表格单元格链接**（v0.3.1）：`cellMd` 把表格内 `<a>` 转 Markdown 链接。
 - [x] **E1** 抓异常示例响应：`fetch.cjs` 点「异常示例」tab，与正常 JSON 去重后注入，渲染 `### 响应示例-异常`。
-- [x] **E2** 内联公共错误码：CLI 惰性抓 `common/02km9f` 缓存，`render.cjs` 用 `opts.commonErrorTables` 内联表格替代外链。
+- [x] ~~**E2** 内联公共错误码~~（v0.3.3 **已回退**）：公共错误码各接口通用，内联会每篇重复、徒增 token；改为保留可追溯的 Markdown 超链接，Agent 需要时自取。
 - [x] **E5** 跨平台：`loadChromium` 用 `npm root -g`+`path.join`；`downloadImage` curl→node fetch 兜底（实测对 nlark 图床有效）。
 
 ### v0.2 — 可靠性补完

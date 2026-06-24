@@ -81,7 +81,7 @@ function renderDoc(d, name, imageExists) {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\n+/, '').replace(/\n+$/, '');
 }
 
-function renderApi(d, opts = {}) {
+function renderApi(d) {
   const h1 = (d.h1 || '').trim();
   const clean = (text) => (text || '').split('\n').map(x => x.trim()).filter(x => x && !API_NOISE.has(x) && x !== h1 && x !== '支持第三方代理调用');
   const s = [];
@@ -104,13 +104,14 @@ function renderApi(d, opts = {}) {
       } else if (!reqLabeled) { s.push('### 常见请求示例', ''); reqLabeled = true; }
       s.push('```' + (p.lang || ''), p.text.trim(), '```', '');
     }
-    // E2：公共错误码段若有内联表格（来自全局错误码页），用它替代「前往查看」外链
-    const isCommonErr = sec.link && /common\/02km9f/.test(sec.link);
-    if (isCommonErr && opts.commonErrorTables && opts.commonErrorTables.length) {
-      opts.commonErrorTables.forEach(t => s.push(mdTable(t), ''));
-      s.push(`> 公共错误码内联自 ${sec.link}`, '');
-    } else if (sec.link) {
-      s.push('前往查看：' + sec.link, '');
+    // 公共错误码各接口通用（同一套），不内联以避免每篇重复、徒增 token；保留为可追溯的超链接，
+    // Agent 需要时可顺链接自行拉取并本地存一份。
+    if (sec.link) {
+      if (/common\/02km9f/.test(sec.link)) {
+        s.push(`> 公共错误码为各接口通用，未内联（避免重复、省 token）。前往查看：[${sec.link}](${sec.link})`, '');
+      } else {
+        s.push(`前往查看：[${sec.link}](${sec.link})`, '');
+      }
     }
   }
   return s.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '');
@@ -127,7 +128,7 @@ function renderMarkdown(data, opts = {}) {
   const head = ['# ' + h1, '', '> 文档来源：' + data.url];
   if (data.upd) head.push('> ' + data.upd);
   head.push('', '---', '');
-  const body = data.type === 'doc' ? renderDoc(data, data.name, imageExists) : renderApi(data, opts);
+  const body = data.type === 'doc' ? renderDoc(data, data.name, imageExists) : renderApi(data);
   return head.join('\n') + '\n' + body + '\n';
 }
 

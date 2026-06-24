@@ -149,25 +149,24 @@ test('renderMarkdown: E1 —— 异常响应示例渲染为「### 响应示例-�
   assert.ok(md.indexOf('### 响应示例') < md.indexOf('### 响应示例-异常'));
 });
 
-test('renderMarkdown: E2 —— 提供 commonErrorTables 时内联表格、替代外链', () => {
-  const data = {
-    type: 'api', h1: 'A', url: 'u', intro: { text: '' },
-    sections: [{ title: '公共错误码', params: [], tables: [], pres: [], link: 'https://opendoc.alipay.com/common/02km9f' }],
-  };
-  const md = renderMarkdown(data, { commonErrorTables: [[['错误码', '描述'], ['ACQ.SYSTEM_ERROR', '系统错误']]] });
-  assert.match(md, /\| 错误码 \| 描述 \|/);
-  assert.match(md, /ACQ\.SYSTEM_ERROR/);
-  assert.match(md, /> 公共错误码内联自 https:\/\/opendoc\.alipay\.com\/common\/02km9f/);
-  assert.doesNotMatch(md, /前往查看：/);
-});
-
-test('renderMarkdown: E2 —— 无 commonErrorTables 时回退「前往查看」外链', () => {
+test('renderMarkdown: 公共错误码渲染为 Markdown 超链接（不内联，省 token）+ 通用说明', () => {
   const data = {
     type: 'api', h1: 'A', url: 'u', intro: { text: '' },
     sections: [{ title: '公共错误码', params: [], tables: [], pres: [], link: 'https://opendoc.alipay.com/common/02km9f' }],
   };
   const md = renderMarkdown(data);
-  assert.match(md, /前往查看：https:\/\/opendoc\.alipay\.com\/common\/02km9f/);
+  assert.match(md, /\[https:\/\/opendoc\.alipay\.com\/common\/02km9f\]\(https:\/\/opendoc\.alipay\.com\/common\/02km9f\)/);
+  assert.match(md, /未内联/);
+  assert.doesNotMatch(md, /\| 错误码 \|/); // 不应有内联表格
+});
+
+test('renderMarkdown: 普通 section 外链也渲染为 Markdown 链接', () => {
+  const data = {
+    type: 'api', h1: 'A', url: 'u', intro: { text: '' },
+    sections: [{ title: '某段', params: [], tables: [], pres: [], link: 'https://opendocs.alipay.com/x' }],
+  };
+  const md = renderMarkdown(data);
+  assert.match(md, /前往查看：\[https:\/\/opendocs\.alipay\.com\/x\]\(https:\/\/opendocs\.alipay\.com\/x\)/);
 });
 
 test('renderMarkdown: 图片只在已下载时输出引用（imageExists 守卫）', () => {
