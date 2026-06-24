@@ -85,6 +85,26 @@ async function fetchDoc(page, url) {
     a.querySelectorAll('*').forEach(el => { const t = (el.innerText || '').trim(); if (!upd && /^更新时间：/.test(t) && t.length < 40) upd = t; });
     const proxy = /支持第三方代理调用/.test(a.innerText);
 
+    // 单元格 → 文本，但把内部 <a href> 保留为 Markdown 链接 [文字](绝对URL)
+    function cellMd(cell) {
+      let out = '';
+      (function walk(node) {
+        for (const n of node.childNodes) {
+          if (n.nodeType === 3) { out += n.textContent; }
+          else if (n.nodeType === 1) {
+            if (n.tagName === 'BR') { out += ' '; }
+            else if (n.tagName === 'A' && n.getAttribute('href')) {
+              const t = (n.innerText || n.textContent || '').trim();
+              let href = n.getAttribute('href') || '';
+              if (href && !/^https?:\/\//.test(href) && !href.startsWith('#')) { try { href = new URL(href, location.href).href; } catch (e) {} }
+              out += t ? '[' + t + '](' + href + ')' : '';
+            } else { walk(n); }
+          }
+        }
+      })(cell);
+      return out.replace(/[ \t]*\n[ \t]*/g, ' ').replace(/[ \t]{2,}/g, ' ').trim();
+    }
+
     // rowspan / colspan 感知的表格 → 二维数组（纵向合并向下重复填值，横向合并仅首格填值、其余留空）
     function tableToRows(t) {
       const trs = Array.from(t.querySelectorAll('tr'));
@@ -95,7 +115,7 @@ async function fetchDoc(page, url) {
         const fill = () => { while (occ[r + ',' + c] !== undefined) { row[c] = occ[r + ',' + c]; c++; } };
         for (const cell of cells) {
           fill();
-          const txt = cell.innerText.trim().replace(/\s*\n\s*/g, ' ');
+          const txt = cellMd(cell);
           const cs = parseInt(cell.getAttribute('colspan') || '1', 10);
           const rs = parseInt(cell.getAttribute('rowspan') || '1', 10);
           for (let k = 0; k < cs; k++) { const v = (k === 0) ? txt : ''; row[c] = v; for (let rr = 1; rr < rs; rr++) occ[(r + rr) + ',' + c] = v; c++; }
