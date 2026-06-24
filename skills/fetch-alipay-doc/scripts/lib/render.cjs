@@ -93,7 +93,15 @@ function renderApi(d) {
     if (txt) s.push(txt, '');
     if (sec.params && sec.params.length) { s.push(renderParams(sec.params), ''); }
     else if (sec.tables && sec.tables.length) { sec.tables.forEach(t => s.push(mdTable(t), '')); }
-    (sec.pres || []).forEach(p => { if (p.text && p.text.trim()) s.push('```' + (p.lang || ''), p.text.trim(), '```', ''); });
+    // 忠实写出页面上的示例区标题：JSON=响应示例，其余(cURL/Java/...)=常见请求示例；各只标一次
+    let reqLabeled = false, respLabeled = false;
+    for (const p of (sec.pres || [])) {
+      if (!p.text || !p.text.trim()) continue;
+      const isResp = /json/i.test(p.lang || '');
+      if (isResp) { if (!respLabeled) { s.push('### 响应示例', ''); respLabeled = true; } }
+      else if (!reqLabeled) { s.push('### 常见请求示例', ''); reqLabeled = true; }
+      s.push('```' + (p.lang || ''), p.text.trim(), '```', '');
+    }
     if (sec.link) s.push('前往查看：' + sec.link, '');
   }
   return s.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '');

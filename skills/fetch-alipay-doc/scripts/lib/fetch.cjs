@@ -72,6 +72,8 @@ async function fetchDoc(page, url) {
     const NBSP = String.fromCharCode(160);
     const a = document.querySelector('article');
     if (!a) return { error: 'no <article> found' };
+    // 移除支付宝注入的「接入检测」调试浮层（非文档正文，class 形如 checkTool___xxx），避免其文案泄漏进正文
+    a.querySelectorAll('[class*="checkTool"]').forEach(e => e.remove());
     const h1 = a.querySelector('h1');
     const H1 = h1 ? h1.innerText : '';
     let upd = '';
