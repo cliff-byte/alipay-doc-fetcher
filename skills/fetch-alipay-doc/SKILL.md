@@ -1,54 +1,47 @@
 ---
 name: fetch-alipay-doc
-description: 抓取支付宝开放平台文档（opendocs.alipay.com / opendoc.alipay.com）为本地 Markdown，供编程 Agent 离线查阅。当用户要获取/下载/本地化任何支付宝开放平台 API 文档、接入指南、错误码、产品文档，或粘贴支付宝 opendocs/opendoc 链接并希望抓取其内容时使用。也适用于普通网页抓取（WebFetch/curl 等）拿不到支付宝文档正文的场景。
+description: 把支付宝开放平台文档（opendocs.alipay.com / opendoc.alipay.com）抓成本地 Markdown，供编程 Agent 离线查阅。当用户要获取/下载/本地化支付宝 API 文档、接入指南、错误码或产品文档，粘贴 opendocs/opendoc 链接想要其内容，或发现 WebFetch/curl 抓支付宝文档只得到空正文时使用。
 ---
 
 # 抓取支付宝开放平台文档
 
-支付宝文档站是 JS 渲染的 SPA，`WebFetch`/`curl` 拿不到正文，代码与参数依赖懒加载与折叠交互。本 Skill 用封装好的 Playwright 工具一步抓成结构化 Markdown。
-
-## 何时使用
-- 用户要把某个支付宝 API / 接入指南 / 错误码 / 产品文档「拉到本地」「抓下来」「转成 Markdown」。
-- 用户粘贴 `opendocs.alipay.com` 或 `opendoc.alipay.com` 链接并想要其内容。
-- 已发现普通网页抓取（`WebFetch` / `curl` 等）对支付宝文档只返回标题、正文为空。
+支付宝文档站是 JS 渲染的 SPA，`WebFetch`/`curl` 拿不到正文，代码块与接口参数还依赖懒加载和折叠/Tab 交互。本 Skill 用封装好的 Playwright 工具一步抓成结构化 Markdown：标题分层、参数层级列表、表格、Java 请求示例、正常+异常响应、本地图片、保留超链接。
 
 ## 怎么用
 
-设本 Skill 安装目录为 `$SKILL`（如 `~/.claude/skills/fetch-alipay-doc`，Codex 为 `~/.codex/skills/...`，Cursor 为 `~/.cursor/skills/...`）。
+记本 Skill 安装目录为 `$SKILL`（Claude Code `~/.claude/skills/fetch-alipay-doc`、Codex `~/.codex/skills/...`、Cursor `~/.cursor/skills/...`）。
 
-1. **首次使用**：在 `$SKILL` 下装一次依赖（仅一次，与运行目录无关）：
+1. **首次准备依赖**（仅一次，与运行目录无关）：
    ```bash
-   (cd "$SKILL" && npm install && npx playwright install chromium)   # 若已全局安装 playwright 可跳过
+   (cd "$SKILL" && npm install && npx playwright install chromium)
    ```
-
-2. 收集要抓的 URL。多篇时写一个 config JSON 文件（如 `urls.json`），内容为数组 `[{ "name": "...", "url": "..." }, ...]`，`name` 决定输出文件名（可省略，缺省用页面 H1）。
-
-3. **在用户当前项目目录下运行**（用绝对路径调脚本，产物落到项目内、对用户可见）。**不要 `cd` 进 `$SKILL` 再跑**——那会把文档写进 skill 安装目录（工具会拒绝）。输出用 `--out` 指定到项目内，按产品/主题分目录：
+2. **运行**：站在**用户当前项目目录**下，用绝对路径调脚本，`--out` 指到项目内（按产品/主题分目录）。**不要 `cd` 进 `$SKILL` 再跑**——产物会被工具拒绝写入安装目录。
    ```bash
    # 单篇
-   node "$SKILL/scripts/fetch-alipay-docs.cjs" --url "<支付宝文档URL>" --name "<文件名>" --out ./alipay-docs/<产品名>
-   # 批量
+   node "$SKILL/scripts/fetch-alipay-docs.cjs" --url "<文档URL>" --name "<文件名>" --out ./alipay-docs/<产品名>
+   # 批量：先写 urls.json = [{ "name": "...", "url": "..." }, ...]（name 可省，缺省用页面 H1）
    node "$SKILL/scripts/fetch-alipay-docs.cjs" --config urls.json --out ./alipay-docs/<产品名>
    ```
-   > node 解析 playwright 依赖是从脚本文件位置找 `node_modules`，与运行目录无关，所以站在项目目录用绝对路径调用即可。
+3. 产出在 `--out`（缺省 `./alipay-docs`）：`<name>.md` + `images/`。结尾汇总成功/失败/缺图，任一失败进程非零退出。
 
-4. 产出在 `--out` 目录：`<name>.md` + `images/`。`--out` 缺省为当前目录下的 `./alipay-docs`。
+> playwright 依赖从脚本文件位置解析，与 cwd 无关；故绝对路径调用即可，cwd 只决定产物落点。
 
 ## 关键原则
-- **忠实**：正文文字必须 100% 来自页面，禁止虚构 / 总结 / 改写 / 解读。工具只做机械格式化。
+**忠实**：正文文字 100% 来自页面，禁止虚构 / 总结 / 改写 / 解读。工具只做机械格式化。
 
-## 抓完自检清单
-每抓完一篇，逐项核对，有问题按「排障」处理或重抓：
-- [ ] 无残留 `@@...@@` 占位（占位未被替换 = 代码/表格/图片丢失）。
-- [ ] 无 UI 噪音行（收藏 / 订阅更新 / 我的文档 / cURL·Java·C# tab 标签 / 「本示例仅供参考」/ 「收起所有属性」等）。
-- [ ] 图片引用全部命中本地 `images/` 文件（无坏链）。
-- [ ] API 业务参数含**嵌套子属性**与**枚举值**且完整（对照页面「展开所有属性」后的状态）。
-- [ ] 公共请求/响应参数表、Java 请求示例、错误码表齐全。
-- [ ] 表格 rowspan 对齐正确（每行 code 与其 sub_code 一一对应，无错位）。
+## 抓完自检
+- [ ] 无残留 `@@...@@` 占位（= 代码/表格/图片丢位）。
+- [ ] 无 UI 噪音行（收藏 / 订阅 / cURL·Java tab 标签 / 「本示例仅供参考」/ 「收起所有属性」等）。
+- [ ] 图片引用全部命中本地 `images/`（工具对缺图会显式告警）。
+- [ ] API 业务参数含**嵌套子属性 + 枚举值**且完整。
+- [ ] 公共请求/响应参数表、Java 请求示例、响应示例（正常+异常）、业务错误码表齐全；公共错误码为超链接（各接口通用，不内联）。
+- [ ] 正文 / 表格 / 参数描述里的外链保留为 Markdown 链接（相对已补绝对）。
+- [ ] 表格 rowspan 对齐（每行 code 与其 sub_code 一一对应）。
 
 ## 排障
-- **代码 / 参数缺失** → 多半是懒加载未滚到或折叠（「更多」枚举、「子属性」嵌套）未展开；确认抓取流程做了全文滚动 + 逐个真实点击展开。
-- **图片下不下来** → `cdn.nlark.com`（语雀图床）用 node `https` 会失败，本工具改用 `curl`（带 UA / Referer）；确认系统装了 `curl`。
-- **接口页结构异常**（如通知 / 回调类，section 是「消息属性 / 通知应答」而非标准请求/响应） → 本工具按通用 H2 分段兼容，无需硬编码 section 名。
+- **代码 / 参数缺失** → 多为懒加载未滚到，或折叠（「更多」枚举、「子属性」嵌套）未展开。
+- **抓取超时 / 失败** → 工具用 `domcontentloaded` 导航 + 自动重试 2 次；仍失败会在结尾列出并非零退出。
+- **图片缺失** → 优先 `curl`，无 curl 自动回退 node `fetch`；二者都失败才告警缺图。
+- **接口页结构异常**（通知 / 回调类，段为「消息属性 / 通知应答」） → 工具按通用 H2 分段兼容。
 
-> 维护者注：完整的踩坑经验、各坑的成因与设计依据见仓库根 `PLAYBOOK.md`（不随 Skill 安装分发，改代码前务必读）。
+> 维护者：完整踩坑经验与设计依据见仓库根 `PLAYBOOK.md`（不随 Skill 安装分发，改代码前必读）。
