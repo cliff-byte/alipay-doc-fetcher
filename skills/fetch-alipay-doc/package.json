@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "description": "把 JS 渲染的支付宝开放平台文档（opendocs/opendoc）抓取为对编程 Agent 友好的 Markdown（含代码块、参数层级、表格、图片）。",
   "bin": {
-    "alipay-doc-fetcher": "./fetch-alipay-docs.cjs"
+    "alipay-doc-fetcher": "./scripts/fetch-alipay-docs.cjs"
   },
   "scripts": {
-    "fetch": "node fetch-alipay-docs.cjs",
+    "fetch": "node scripts/fetch-alipay-docs.cjs",
     "postinstall": "echo '请执行: npx playwright install chromium'"
   },
   "dependencies": {

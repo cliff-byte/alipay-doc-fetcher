@@ -6,36 +6,38 @@
 
 支付宝文档站是 SPA：`WebFetch`/`curl` 只能拿到标题；代码块（CodeMirror）和接口参数依赖懒加载与折叠/Tab 交互，直接抓 DOM 会大面积缺失。本工具用无头浏览器渲染 + 模拟交互 + 结构化提取，把这些坑一次性封装好。
 
-> 完整的踩坑经验与设计依据见 [PLAYBOOK.md](./PLAYBOOK.md)。**强烈建议改代码前先读它。**
+> 完整的踩坑经验与设计依据见 [PLAYBOOK.md](./skills/fetch-alipay-doc/references/PLAYBOOK.md)。**强烈建议改代码前先读它。**
 
 ## 安装为 Skill（推荐）
 
-本仓库根目录即一个自包含 **Agent Skill**（`SKILL.md` 标准格式，跨 Claude Code / Codex / Cursor 通用）。把整个仓库 clone 到对应 Agent 的 skills 目录，命名为 `fetch-alipay-doc` 即可：
-
-| Agent | clone 目标目录 |
-|---|---|
-| **Claude Code** | `~/.claude/skills/fetch-alipay-doc`（全局）或 `<项目>/.claude/skills/fetch-alipay-doc` |
-| **Codex CLI** | `~/.codex/skills/fetch-alipay-doc`（全局）或 `<项目>/.codex/skills/` |
-| **Cursor** | `~/.cursor/skills/fetch-alipay-doc` 或 `<项目>/.cursor/skills/`；Cursor 也兼容读取 `~/.claude/skills/`、`~/.codex/skills/` |
+本仓库是符合 [skills.sh](https://skills.sh) / `npx skills` 规范的开源 Skill 仓库（`skills/fetch-alipay-doc/SKILL.md`，跨 Claude Code / Codex / Cursor 等 70+ Agent 通用）。一条命令安装：
 
 ```bash
-# 以 Claude Code 全局安装为例
-git clone https://github.com/cliff-byte/alipay-doc-fetcher.git ~/.claude/skills/fetch-alipay-doc
-cd ~/.claude/skills/fetch-alipay-doc
-npm install && npx playwright install chromium   # 准备依赖（图片下载另需系统 curl）
+# 安装到所有已检测到的 Agent（交互式选择）
+npx skills add cliff-byte/alipay-doc-fetcher
+
+# 或指定 Agent
+npx skills add cliff-byte/alipay-doc-fetcher -a claude-code -a codex -a cursor
 ```
 
-> 装一处常可多家复用：Cursor 会兜底读取 `~/.claude/`、`~/.codex/` 下的 skills。
+安装后进入该 Skill 目录补齐运行依赖（Playwright + chromium，图片下载另需系统 `curl`）：
+
+```bash
+cd ~/.claude/skills/fetch-alipay-doc        # Codex 为 ~/.codex/skills/...，Cursor 为 ~/.cursor/skills/...
+npm install && npx playwright install chromium
+```
 
 之后在任一支持的 Agent 里，直接说「把这篇支付宝文档抓到本地：<链接>」即可触发。
+
+> 各 Agent 的 skills 目录：Claude Code `~/.claude/skills/`、Codex `~/.codex/skills/`、Cursor `~/.cursor/skills/`（Cursor 也兼容读取前两者）。
 
 ## 直接当 CLI 用
 
 不走 Skill 也行，clone 后直接命令行调用：
 
 ```bash
-git clone https://github.com/cliff-byte/alipay-doc-fetcher.git alipay-doc-fetcher
-cd alipay-doc-fetcher
+git clone https://github.com/cliff-byte/alipay-doc-fetcher.git
+cd alipay-doc-fetcher/skills/fetch-alipay-doc
 npm install && npx playwright install chromium
 ```
 
@@ -43,14 +45,16 @@ npm install && npx playwright install chromium
 
 ## 用法
 
+> 以下命令均在 Skill 目录（`skills/fetch-alipay-doc/`）下执行。
+
 抓单篇：
 ```bash
-node fetch-alipay-docs.cjs --url "https://opendocs.alipay.com/open/07kszv" --name 01-权限集介绍 --out ./output
+node scripts/fetch-alipay-docs.cjs --url "https://opendocs.alipay.com/open/07kszv" --name 01-权限集介绍 --out ./output
 ```
 
 批量（推荐）：
 ```bash
-node fetch-alipay-docs.cjs --config examples/urls.example.json --out ./output
+node scripts/fetch-alipay-docs.cjs --config examples/urls.example.json --out ./output
 ```
 
 `config` 为 JSON 数组：
@@ -77,14 +81,18 @@ output/
 ## 结构
 
 ```
-fetch-alipay-docs.cjs   # CLI 入口（编排浏览器、下载图片、落盘）
-lib/fetch.cjs           # 抓取 + 页面内结构化提取
-lib/render.cjs          # 结构化数据 → Markdown
-PLAYBOOK.md             # 经验手册（核心知识）
-SKILL.md                # Claude Code Skill 定义
-examples/urls.example.json
+skills/fetch-alipay-doc/          # 自包含 Skill（npx skills 自动探测）
+├── SKILL.md                      # Skill 定义（跨 Agent 通用）
+├── package.json                  # 依赖（playwright）
+├── scripts/
+│   ├── fetch-alipay-docs.cjs     # CLI 入口（编排浏览器、下载图片、落盘）
+│   └── lib/
+│       ├── fetch.cjs             # 抓取 + 页面内结构化提取
+│       └── render.cjs            # 结构化数据 → Markdown
+├── references/PLAYBOOK.md        # 经验手册（核心知识）
+└── examples/urls.example.json
 ```
 
 ## 状态
 
-早期版本（v0.1）。已在「消费者投诉」12 篇文档上验证。已知局限见 PLAYBOOK.md §4。
+早期版本（v0.1）。已在「消费者投诉」12 篇文档上验证。已知局限见 [PLAYBOOK.md](./skills/fetch-alipay-doc/references/PLAYBOOK.md) §4。
