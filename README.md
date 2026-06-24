@@ -39,6 +39,16 @@ npm install && npx playwright install chromium
 
 > 各 Agent 的 skills 目录：Claude Code `~/.claude/skills/`、Codex `~/.codex/skills/`、Cursor `~/.cursor/skills/`（Cursor 也兼容读取前两者）。
 
+## 提高触发率（推荐）
+
+Skill 是否被调用由 Agent 自行判断。实测发现：对「抓个 URL」这类请求，Agent 常**误以为自己能直接 WebFetch** 而不去调本 Skill（直到拿到空正文才回头）。最可靠的办法是在你项目根的 `CLAUDE.md`（Codex 用 `AGENTS.md`，Cursor 用 `.cursor/rules/`）里加一条路由规则，把下面这段复制进去：
+
+```markdown
+## Skill 路由
+
+当用户想要任何**支付宝开放平台文档**（opendocs.alipay.com / opendoc.alipay.com）的正文内容——抓取 / 下载 / 本地化 API 接口文档、接入指南、错误码、产品文档，或粘贴 opendocs/opendoc 链接、给出文档 ID（如 07kszv）或接口名（如 alipay.trade.fastpay.refund.query）——一律用 `fetch-alipay-doc` 技能，**不要直接 WebFetch/curl**：该站是 JS 渲染的 SPA，直接抓只会得到空正文。
+```
+
 ## 直接当 CLI 用
 
 不走 Skill 也行，clone 后直接命令行调用：
