@@ -82,7 +82,7 @@ async function fetchDoc(page, url) {
 
     // 全文档超链接保留：提取前把内容里每个 <a href> 替换为 Markdown 链接文本节点 [文字](绝对URL)。
     // 这样后续 innerText（文档页正文）、.paramsRow 描述、表格 cellMd 都天然带上链接。
-    // 例外：「前往查看」留作 <a>，供 API 公共错误码段的 sec.link 检测（E2 内联）。
+    // 例外：「前往查看」留作 <a>，供 API 公共错误码段的 sec.link 检测（渲染为超链接）。
     a.querySelectorAll('a[href]').forEach(el => {
       const t = (el.innerText || el.textContent || '').trim();
       if (!t || t === '前往查看') return;
