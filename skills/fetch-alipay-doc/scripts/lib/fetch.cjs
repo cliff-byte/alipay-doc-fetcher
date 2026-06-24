@@ -4,7 +4,7 @@
  *
  * 支付宝 opendocs / opendoc 是 JS 渲染的 SPA，正文、代码块、参数、图片大量依赖
  * 懒加载与折叠交互，直接抓 HTML / innerText 会大面积缺失。本模块封装了一套
- * 经实战验证的抓取流程，详见 ../../references/PLAYBOOK.md。
+ * 经实战验证的抓取流程，详见仓库根 PLAYBOOK.md（维护者文档）。
  */
 
 /** 解析 playwright（优先项目本地，回退全局 homebrew 安装） */

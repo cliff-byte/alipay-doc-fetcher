@@ -26,7 +26,7 @@ goto(url, networkidle) → 等待
   → node 端渲染为 Markdown + 用 curl 下载图片
 ```
 
-代码落点：`lib/fetch.cjs`（抓取+提取）、`lib/render.cjs`（渲染）、`fetch-alipay-docs.cjs`（CLI 编排+下载）。
+代码落点（均在 `skills/fetch-alipay-doc/scripts/` 下）：`lib/fetch.cjs`（抓取+提取）、`lib/render.cjs`（渲染）、`fetch-alipay-docs.cjs`（CLI 编排+下载）。
 
 ---
 

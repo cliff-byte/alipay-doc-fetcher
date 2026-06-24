@@ -6,7 +6,7 @@
 
 支付宝文档站是 SPA：`WebFetch`/`curl` 只能拿到标题；代码块（CodeMirror）和接口参数依赖懒加载与折叠/Tab 交互，直接抓 DOM 会大面积缺失。本工具用无头浏览器渲染 + 模拟交互 + 结构化提取，把这些坑一次性封装好。
 
-> 完整的踩坑经验与设计依据见 [PLAYBOOK.md](./skills/fetch-alipay-doc/references/PLAYBOOK.md)。**强烈建议改代码前先读它。**
+> 完整的踩坑经验与设计依据见 [PLAYBOOK.md](./PLAYBOOK.md)。**强烈建议改代码前先读它。**
 
 ## 安装为 Skill（推荐）
 
@@ -81,18 +81,19 @@ output/
 ## 结构
 
 ```
-skills/fetch-alipay-doc/          # 自包含 Skill（npx skills 自动探测）
-├── SKILL.md                      # Skill 定义（跨 Agent 通用）
+skills/fetch-alipay-doc/          # 自包含 Skill（npx skills 自动探测并安装）
+├── SKILL.md                      # Skill 定义 + 抓完自检清单（跨 Agent 通用）
 ├── package.json                  # 依赖（playwright）
 ├── scripts/
 │   ├── fetch-alipay-docs.cjs     # CLI 入口（编排浏览器、下载图片、落盘）
 │   └── lib/
 │       ├── fetch.cjs             # 抓取 + 页面内结构化提取
 │       └── render.cjs            # 结构化数据 → Markdown
-├── references/PLAYBOOK.md        # 经验手册（核心知识）
 └── examples/urls.example.json
+
+PLAYBOOK.md                       # 维护者经验手册（仓库根，不随 Skill 安装分发）
 ```
 
 ## 状态
 
-早期版本（v0.1）。已在「消费者投诉」12 篇文档上验证。已知局限见 [PLAYBOOK.md](./skills/fetch-alipay-doc/references/PLAYBOOK.md) §4。
+早期版本（v0.1）。已在「消费者投诉」12 篇文档上验证。已知局限见 [PLAYBOOK.md](./PLAYBOOK.md) §4。
