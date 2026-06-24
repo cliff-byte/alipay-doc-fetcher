@@ -5,7 +5,7 @@
 ## 开始之前
 
 - **务必先读 [PLAYBOOK.md](./PLAYBOOK.md)** —— 它记录了支付宝文档站所有踩过的坑与设计依据（懒加载、折叠展开、CodeMirror、rowspan 表格、噪音过滤等）。改抓取/渲染逻辑前不读它大概率会重复踩坑。
-- 代码落点：`skills/fetch-alipay-doc/scripts/`（`fetch-alipay-docs.cjs` 编排、`lib/fetch.cjs` 抓取+提取、`lib/render.cjs` 渲染、`lib/paths.cjs` 落点护栏）。
+- 代码落点：`skills/fetch-alipay-doc/scripts/`（`fetch-alipay-docs.cjs` 编排+重试、`lib/fetch.cjs` 抓取+提取+产出自检、`lib/render.cjs` 渲染、`lib/validate.cjs` 输入校验、`lib/util.cjs` 文件名、`lib/paths.cjs` 落点护栏）。
 
 ## 本地开发
 

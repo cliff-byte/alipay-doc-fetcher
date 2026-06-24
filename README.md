@@ -112,8 +112,10 @@ skills/fetch-alipay-doc/          # 自包含 Skill（npx skills 自动探测并
 │   └── lib/
 │       ├── fetch.cjs             # 抓取 + 页面内结构化提取 + 产出自检
 │       ├── render.cjs            # 结构化数据 → Markdown
-│       ├── fetch.test.cjs        # 单测（sanityWarnings）
-│       └── render.test.cjs       # 单测（渲染纯函数）
+│       ├── validate.cjs          # 输入校验（config / URL）
+│       ├── util.cjs              # 文件名 slug / 去重
+│       ├── paths.cjs             # 输出落点护栏
+│       └── *.test.cjs            # 各模块零依赖单测（node:test）
 └── examples/urls.example.json
 
 PLAYBOOK.md                       # 维护者经验手册（仓库根，不随 Skill 安装分发）

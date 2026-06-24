@@ -16,7 +16,7 @@
 ## 1. 整体流程（本工具的做法）
 
 ```
-goto(url, networkidle) → 等待
+goto(url, domcontentloaded) → 等 article 渲染 → networkidle 尽力而为(不阻塞)
   → 滚动遍历全文（触发懒加载）
   → 逐个展开「更多」「子属性」（真实点击，防 toggle）
   → 切换请求示例的 Java tab
@@ -26,7 +26,9 @@ goto(url, networkidle) → 等待
   → node 端渲染为 Markdown + 用 curl 下载图片
 ```
 
-代码落点（均在 `skills/fetch-alipay-doc/scripts/` 下）：`lib/fetch.cjs`（抓取+提取）、`lib/render.cjs`（渲染）、`fetch-alipay-docs.cjs`（CLI 编排+下载）。
+> 导航不用 `waitUntil:'networkidle'`——轮询型 SPA 常永不触发 networkidle 而 60s 超时。改 `domcontentloaded` + 等 `article` 出现 + networkidle 仅尽力而为(`.catch()` 吞超时)；CLI 侧再加 `fetchWithRetry`(2 次)。详见 §2.14。
+
+代码落点（均在 `skills/fetch-alipay-doc/scripts/` 下）：`lib/fetch.cjs`（抓取+提取+产出自检）、`lib/render.cjs`（渲染）、`lib/validate.cjs`（输入校验）、`lib/util.cjs`（文件名）、`lib/paths.cjs`（落点护栏）、`fetch-alipay-docs.cjs`（CLI 编排+下载+重试）。
 
 ---
 
@@ -108,6 +110,15 @@ API 参数默认展开（显示「收起所有属性」），但**枚举值**被
 ### 2.13 Markdown 格式化（文档页，给 AI 读）
 - 数字标题 `N` / `N.N` / `N.N.N xxx` → `##` / `###` / `####`（约束整行匹配且 <50 字，防误伤正文如「3 X 24 小时」）。
 - 无序列表：`●` 单独成行 + 下一行内容 → `- 内容`。
+
+### 2.14 导航健壮性：别用 networkidle（会偶发 60s 超时）
+支付宝文档站是轮询型 SPA，后台心跳/埋点请求**永不停歇**，`page.goto(url, {waitUntil:'networkidle'})` 常等不到 idle 而 60s 超时，把整篇判失败（实测 API 页约半数命中）。
+- 解法：`goto(url, {waitUntil:'domcontentloaded'})`（快速可靠）→ `waitForSelector('article')`（确认 SPA 渲染出正文容器）→ `waitForLoadState('networkidle', {timeout:15000}).catch(()=>{})`（尽力等网络静默，超时就吞掉、不阻塞）。
+- 兜底：CLI 侧 `fetchWithRetry`，失败换新页面重试 1 次（共 2 次），吸收偶发抖动。
+
+### 2.15 输入校验与文件名防撞（CLI 边界）
+- `lib/validate.cjs`：`parseConfig` 校验 config 是数组且每项含合法 http(s) url，畸形给清晰错误而非 `JSON.parse` 崩栈；`isAlipayDocUrl` 对非 opendocs/opendoc 域名告警。
+- `lib/util.cjs`：`uniqueName` 对同名 H1 追加 `-2`/`-3`，避免静默覆盖 `.md`。
 
 ---
 
