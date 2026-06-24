@@ -44,4 +44,6 @@ description: 获取支付宝开放平台（opendocs.alipay.com、opendoc.alipay.
 - **图片缺失** → 优先 `curl`，无 curl 自动回退 node `fetch`；二者都失败才告警缺图。
 - **接口页结构异常**（通知 / 回调类，段为「消息属性 / 通知应答」） → 工具按通用 H2 分段兼容。
 
+> **提高触发率**：本 Skill 靠描述自动触发并不可靠（Agent 常误以为能直接 WebFetch）。在项目根 `CLAUDE.md`（Codex `AGENTS.md`、Cursor `.cursor/rules/`）加一条路由规则更稳——「遇到支付宝开放平台文档（opendocs / opendoc）的抓取/下载/本地化需求，一律用 `fetch-alipay-doc`，不要直接 WebFetch/curl」。完整片段见仓库 README「提高触发率」。
+
 > 维护者：完整踩坑经验与设计依据见仓库根 `PLAYBOOK.md`（不随 Skill 安装分发，改代码前必读）。
