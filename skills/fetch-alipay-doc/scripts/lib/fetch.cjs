@@ -7,15 +7,16 @@
  * 经实战验证的抓取流程，详见仓库根 PLAYBOOK.md（维护者文档）。
  */
 
-/** 解析 playwright（优先项目本地，回退全局 homebrew 安装） */
+/** 解析 playwright（优先项目本地，回退全局安装；跨平台：npm root -g + path.join） */
 function loadChromium() {
   try { return require('playwright').chromium; } catch (e) {}
-  const { execSync } = require('child_process');
   try {
+    const { execSync } = require('child_process');
+    const path = require('path');
     const root = execSync('npm root -g').toString().trim();
-    return require(root + '/playwright').chromium;
+    return require(path.join(root, 'playwright')).chromium;
   } catch (e) {}
-  throw new Error('未找到 playwright，请在项目内执行 `npm install` 或全局 `npm i -g playwright`，并 `npx playwright install chromium`。');
+  throw new Error('未找到 playwright。请在 Skill 目录执行 `npm install`（或全局 `npm i -g playwright`），并 `npx playwright install chromium`。');
 }
 
 /**
@@ -174,7 +175,28 @@ async function fetchDoc(page, url) {
     return { type: 'api', h1: H1, upd, proxy, intro, sections };
   });
 
-  // 5) DOM 漂移合理性断言：站点改版会让选择器静默失效、产出空/残缺文档而不报错。
+  // 5) E1：补抓「异常示例」响应（API 页响应示例默认只显示「正常示例」tab）。
+  //    主提取后再点 tab，读取异常 JSON，注入到含 json 的 section，标记 abnormal 供渲染区分。
+  if (data && data.type === 'api') {
+    try {
+      const tab = page.locator('article').getByText('异常示例', { exact: true });
+      if (await tab.count()) {
+        await tab.first().click({ timeout: 2000 });
+        await page.waitForTimeout(500);
+        const abn = await page.evaluate(() => {
+          const pre = Array.from(document.querySelectorAll('article pre')).find(p => /language-json/.test((p.className || '').toString()));
+          return pre ? pre.innerText : '';
+        });
+        const sec = (data.sections || []).find(s => (s.pres || []).some(p => /json/i.test(p.lang || '')));
+        if (sec && abn && abn.trim()) {
+          const normal = (sec.pres.find(p => /json/i.test(p.lang || '')) || {}).text || '';
+          if (abn.trim() !== normal.trim()) sec.pres.push({ lang: 'json', text: abn.trim(), abnormal: true });
+        }
+      }
+    } catch (e) {}
+  }
+
+  // 6) DOM 漂移合理性断言：站点改版会让选择器静默失效、产出空/残缺文档而不报错。
   //    抓完即自检，把"静默退化"变成显式告警。
   if (data && !data.error) data.warnings = sanityWarnings(data);
   return data;

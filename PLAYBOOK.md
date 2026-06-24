@@ -63,7 +63,7 @@ API 参数默认展开（显示「收起所有属性」），但**枚举值**被
 
 ### 2.6 图片
 - **定位**：抓取前把每个 `<img>` 替换成 `@@IMG{idx}@@` 文本占位再取 `innerText`，可精确保留图片在正文中的位置。
-- **下载**：`cdn.nlark.com`（语雀图床）用 node 的 `https.get` 会失败，但裸 `curl -L`（带 UA/Referer）成功（200）。统一用 curl（见 `fetch-alipay-docs.cjs` 的 `downloadImage`）。
+- **下载**：`cdn.nlark.com`（语雀图床）用 node 旧的 `https.get` 会失败，优先用 `curl`（带 UA/Referer，200）。无 curl 时回退 node 内置 `fetch`（undici，**实测对 nlark 同样 200**，跨平台兜底）。见 `fetch-alipay-docs.cjs` 的 `downloadImage` / `hasCurl`。
 - **排除 UI 图标**：API 接口页正文一般无图，其 `<img>` 多为页面模板 UI 图标（多页 `src` 相同、`alt` 为空）。用 `.docs-article-content` 抓正文图、API 页不抓图，即可自动规避。
 
 ### 2.7 API 参数有两种 DOM 视图，要选对
@@ -133,15 +133,22 @@ API 参数默认展开（显示「收起所有属性」），但**枚举值**被
 ---
 
 ## 4. 已知局限 / 待改进
-- API 页「公共错误码」只取「前往查看」外链；如需内联可单独抓 `https://opendoc.alipay.com/common/02km9f`（公共错误码全局页）。
-- API 页「响应示例-异常示例」tab 默认未抓（只抓了正常示例）；如需补，按 tab 切换思路处理。
 - 代码块语言标识：文档页 CodeMirror 统一标 ```java（实际多为 Java/JSON，未逐块判定语言）；API 页按 `pre.language-*` 真实标注。
-- 未做增量/缓存；大批量抓取建议复用同一 browser 实例（CLI 已如此）。
-- `loadChromium()` 目前回退到 homebrew 全局路径；迁移到其他环境时建议项目内 `npm install playwright`。
+- 未做增量/缓存（E3）；大批量抓取建议复用同一 browser 实例（CLI 已如此）。
+- 请求示例固定取 Java（E4 多语言示例可选未做）。
+- 跨平台代码已就绪（`npm root -g` + `path.join` 解析 chromium、curl→fetch 兜底下图），但仅 macOS 实测过。
+
+> 已消解的局限（v0.3）：异常示例响应已抓（E1，`fetch.cjs` 点「异常示例」tab）；公共错误码已内联（E2，CLI 惰性抓 `common/02km9f` 缓存后内联，见 `render.cjs` 的 `commonErrorTables`）。
+
+### 4.1 E1 异常示例（实现要点）
+响应示例区有「正常示例 / 异常示例」两个 tab（`labelContainer___*`），默认只显示正常。做法：主提取拿到正常 JSON 后，Playwright 点「异常示例」tab，再读当前 `pre.language-json`，与正常 JSON 去重后作为 `{abnormal:true}` 注入对应 section，渲染为 `### 响应示例-异常`。
+
+### 4.2 E2 内联公共错误码（实现要点）
+API 页「公共错误码」段只给 `common/02km9f` 外链。CLI 检测到该链接时**惰性抓一次**全局错误码页（doc 型，取其 `tables`），缓存（`commonErr`：undefined/null/array 三态）后传入 `renderMarkdown` 的 `opts.commonErrorTables`，渲染层用内联表格替代外链。公共错误码是标准固定集（约 60 行），每 API 页内联使文档离线自洽。
 
 ---
 
 ## 5. 环境
-- Node + Playwright（`npm install` 后 `npx playwright install chromium`）。
-- 图片下载依赖系统 `curl`。
-- 仅在 macOS 验证过；其他平台注意 chromium 缓存路径与 curl 可用性。
+- Node ≥ 24 + Playwright（`npm install` 后 `npx playwright install chromium`）。
+- 图片下载优先 `curl`，无 curl 回退 node 内置 `fetch`（跨平台）。
+- 代码跨平台（macOS/Linux/Windows），但仅在 macOS 实测过；其他平台注意 chromium 缓存由 Playwright 自管。

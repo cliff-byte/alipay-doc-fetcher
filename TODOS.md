@@ -4,11 +4,7 @@
 
 ## 待做（已评审、未排期）
 
-### P2 — 能力增强（评审接受、暂未实现）
-> 下列 E1/E2/E5 在初次评审时被接受进范围，但实际迭代先做了可靠性主线（P1 + v0.2），尚未实现；对应"局限"见 PLAYBOOK §4。
-- [ ] **E1 抓异常示例响应**：当前只抓「正常示例」JSON；补抓「异常示例」tab，让 API 文档同时给出成功/失败两种响应。
-- [ ] **E2 内联公共错误码**：当前 API 页「公共错误码」只留「前往查看」外链；抓全局错误码页（`opendoc.alipay.com/common/02km9f`）内联，使文档离线自洽。
-- [ ] **E5 跨平台可移植**：当前仅 macOS 验证，`loadChromium` 回退 homebrew 路径；补 Linux/Windows chromium/curl 路径探测。
+### P2 — 能力增强（暂缓）
 - [ ] **E3 增量/缓存**：按 URL + 内容指纹跳过未变页，大批量/反复抓取省时，并减轻对支付宝服务器压力。
 - [ ] **E4 多语言示例可选**：加 `--lang`，支持 Python/PHP 等语言栈开发者取对应请求示例（当前固定 Java）。
 
@@ -18,6 +14,11 @@
   - 现状：已有单测固定当前行为（`render.test.cjs`）。改进需更稳的启发式且不回归已验证的 12 篇文档，故需配套重新验证。
 
 ## 已完成
+
+### v0.3 — 能力增强
+- [x] **E1** 抓异常示例响应：`fetch.cjs` 点「异常示例」tab，与正常 JSON 去重后注入，渲染 `### 响应示例-异常`。
+- [x] **E2** 内联公共错误码：CLI 惰性抓 `common/02km9f` 缓存，`render.cjs` 用 `opts.commonErrorTables` 内联表格替代外链。
+- [x] **E5** 跨平台：`loadChromium` 用 `npm root -g`+`path.join`；`downloadImage` curl→node fetch 兜底（实测对 nlark 图床有效）。
 
 ### v0.2 — 可靠性补完
 - [x] **T10** 抓取健壮性：导航改 `domcontentloaded` + 等 `article` + networkidle 仅尽力而为；CLI 加 `fetchWithRetry`（2 次）。修掉 networkidle 偶发 60s 超时。

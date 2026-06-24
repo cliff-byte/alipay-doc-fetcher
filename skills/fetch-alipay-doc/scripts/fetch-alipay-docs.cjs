@@ -40,12 +40,43 @@ async function fetchWithRetry(browser, url, attempts = 2) {
   throw lastErr;
 }
 
-// node 的 https 对部分支付宝图床（cdn.nlark.com）会失败，统一用 curl 更稳
-function downloadImage(url, dest) {
+let _curlChecked = false, _curlOk = false;
+function hasCurl() {
+  if (_curlChecked) return _curlOk;
+  _curlChecked = true;
+  try { execFileSync('curl', ['--version'], { stdio: 'ignore' }); _curlOk = true; }
+  catch (e) { _curlOk = false; }
+  return _curlOk;
+}
+
+// 图片下载：优先 curl（支付宝图床 cdn.nlark.com 对 node https 常失败）；无 curl 时回退 node 内置 fetch（跨平台）
+async function downloadImage(url, dest) {
+  const headers = { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://opendocs.alipay.com/' };
+  if (hasCurl()) {
+    try {
+      execFileSync('curl', ['-sSL', '--max-time', '30', '-H', `User-Agent: ${headers['User-Agent']}`, '-H', `Referer: ${headers.Referer}`, '-o', dest, url], { stdio: 'ignore' });
+      if (fs.existsSync(dest) && fs.statSync(dest).size > 0) return true;
+    } catch (e) { /* 落到 fetch 兜底 */ }
+  }
   try {
-    execFileSync('curl', ['-sSL', '--max-time', '30', '-H', 'User-Agent: Mozilla/5.0', '-H', 'Referer: https://opendocs.alipay.com/', '-o', dest, url], { stdio: 'ignore' });
-    return fs.existsSync(dest) && fs.statSync(dest).size > 0;
+    const res = await fetch(url, { headers });
+    if (!res.ok) return false;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (!buf.length) return false;
+    fs.writeFileSync(dest, buf);
+    return true;
   } catch (e) { return false; }
+}
+
+// E2：抓全局公共错误码页（一次，缓存），返回各表格 rows 数组用于内联
+async function fetchCommonErrorTable(browser, url) {
+  try {
+    const data = await fetchWithRetry(browser, url);
+    if (data && data.type === 'doc' && Array.isArray(data.tables) && data.tables.length) {
+      return data.tables.map(t => t.rows);
+    }
+  } catch (e) {}
+  return null;
 }
 
 async function main() {
@@ -93,6 +124,7 @@ async function main() {
   const failed = [];     // { url, reason } —— 抓取失败的篇目
   const imgFails = [];   // 'name-idx.png' —— 下载失败、不会出现在 Markdown 里的图片
   let okCount = 0, warnCount = 0;
+  let commonErr = undefined;  // E2 公共错误码表缓存：undefined=未抓 / null=抓取失败 / array=已缓存
 
   for (const job of jobs) {
     let data;
@@ -108,13 +140,23 @@ async function main() {
     if (data.type === 'doc') {
       for (const im of (data.imgs || [])) {
         const fn = `${name}-${im.idx}.png`;
-        const ok = downloadImage(im.src, path.join(imgDir, fn));
+        const ok = await downloadImage(im.src, path.join(imgDir, fn));
         if (ok) downloaded.add(fn);
         else imgFails.push(fn);
       }
     }
 
-    const md = renderMarkdown(data, { imageExists: (fn) => downloaded.has(fn) });
+    // E2：API 页若引用公共错误码全局页，惰性抓取一次并缓存，用于内联
+    let commonErrorTables = null;
+    if (data.type === 'api') {
+      const link = (data.sections || []).map(s => s.link).find(l => l && /common\/02km9f/.test(l));
+      if (link) {
+        if (commonErr === undefined) { console.log('  ↳ 抓取公共错误码全局页以内联…'); commonErr = await fetchCommonErrorTable(browser, link); }
+        commonErrorTables = commonErr;
+      }
+    }
+
+    const md = renderMarkdown(data, { imageExists: (fn) => downloaded.has(fn), commonErrorTables });
     fs.writeFileSync(path.join(outDir, `${name}.md`), md);
     const summary = data.type === 'doc'
       ? `doc, ${(data.imgs || []).length} 图, ${(data.codes || []).length} 代码块, ${(data.tables || []).length} 表`

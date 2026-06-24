@@ -81,7 +81,7 @@ function renderDoc(d, name, imageExists) {
   return out.join('\n').replace(/\n{3,}/g, '\n\n').replace(/^\n+/, '').replace(/\n+$/, '');
 }
 
-function renderApi(d) {
+function renderApi(d, opts = {}) {
   const h1 = (d.h1 || '').trim();
   const clean = (text) => (text || '').split('\n').map(x => x.trim()).filter(x => x && !API_NOISE.has(x) && x !== h1 && x !== '支持第三方代理调用');
   const s = [];
@@ -93,16 +93,25 @@ function renderApi(d) {
     if (txt) s.push(txt, '');
     if (sec.params && sec.params.length) { s.push(renderParams(sec.params), ''); }
     else if (sec.tables && sec.tables.length) { sec.tables.forEach(t => s.push(mdTable(t), '')); }
-    // 忠实写出页面上的示例区标题：JSON=响应示例，其余(cURL/Java/...)=常见请求示例；各只标一次
+    // 忠实写出页面上的示例区标题：JSON=响应示例（abnormal=异常），其余(cURL/Java/...)=常见请求示例
     let reqLabeled = false, respLabeled = false;
     for (const p of (sec.pres || [])) {
       if (!p.text || !p.text.trim()) continue;
       const isResp = /json/i.test(p.lang || '');
-      if (isResp) { if (!respLabeled) { s.push('### 响应示例', ''); respLabeled = true; } }
-      else if (!reqLabeled) { s.push('### 常见请求示例', ''); reqLabeled = true; }
+      if (isResp) {
+        if (p.abnormal) { s.push('### 响应示例-异常', ''); }
+        else if (!respLabeled) { s.push('### 响应示例', ''); respLabeled = true; }
+      } else if (!reqLabeled) { s.push('### 常见请求示例', ''); reqLabeled = true; }
       s.push('```' + (p.lang || ''), p.text.trim(), '```', '');
     }
-    if (sec.link) s.push('前往查看：' + sec.link, '');
+    // E2：公共错误码段若有内联表格（来自全局错误码页），用它替代「前往查看」外链
+    const isCommonErr = sec.link && /common\/02km9f/.test(sec.link);
+    if (isCommonErr && opts.commonErrorTables && opts.commonErrorTables.length) {
+      opts.commonErrorTables.forEach(t => s.push(mdTable(t), ''));
+      s.push(`> 公共错误码内联自 ${sec.link}`, '');
+    } else if (sec.link) {
+      s.push('前往查看：' + sec.link, '');
+    }
   }
   return s.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\n+$/, '');
 }
@@ -118,7 +127,7 @@ function renderMarkdown(data, opts = {}) {
   const head = ['# ' + h1, '', '> 文档来源：' + data.url];
   if (data.upd) head.push('> ' + data.upd);
   head.push('', '---', '');
-  const body = data.type === 'doc' ? renderDoc(data, data.name, imageExists) : renderApi(data);
+  const body = data.type === 'doc' ? renderDoc(data, data.name, imageExists) : renderApi(data, opts);
   return head.join('\n') + '\n' + body + '\n';
 }
 
