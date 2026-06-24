@@ -79,6 +79,19 @@ async function fetchDoc(page, url) {
     if (!a) return { error: 'no <article> found' };
     // 移除支付宝注入的「接入检测」调试浮层（非文档正文，class 形如 checkTool___xxx），避免其文案泄漏进正文
     a.querySelectorAll('[class*="checkTool"]').forEach(e => e.remove());
+
+    // 全文档超链接保留：提取前把内容里每个 <a href> 替换为 Markdown 链接文本节点 [文字](绝对URL)。
+    // 这样后续 innerText（文档页正文）、.paramsRow 描述、表格 cellMd 都天然带上链接。
+    // 例外：「前往查看」留作 <a>，供 API 公共错误码段的 sec.link 检测（E2 内联）。
+    a.querySelectorAll('a[href]').forEach(el => {
+      const t = (el.innerText || el.textContent || '').trim();
+      if (!t || t === '前往查看') return;
+      let href = el.getAttribute('href') || '';
+      if (!href || href.startsWith('#') || /^javascript:/i.test(href)) return;
+      if (!/^https?:\/\//.test(href)) { try { href = new URL(href, location.href).href; } catch (e) { return; } }
+      el.replaceWith(document.createTextNode('[' + t + '](' + href + ')'));
+    });
+
     const h1 = a.querySelector('h1');
     const H1 = h1 ? h1.innerText : '';
     let upd = '';

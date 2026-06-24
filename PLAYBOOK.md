@@ -96,10 +96,11 @@ API 参数默认展开（显示「收起所有属性」），但**枚举值**被
 公共错误码这类大表用合并单元格（一个 `code` 跨多个 `sub_code` 行）。简单 `tr→td` 提取会**行错位**。
 - 解法（见 `fetch.cjs` 的 `tableToRows`）：维护 `occupied` 网格；纵向合并（rowspan）**向下重复填值**（每行都有完整 code，AI 读取无歧义）；横向合并（colspan）**仅首格填值、其余留空**。
 
-### 2.11-bis 单元格内超链接要保留
-公共请求参数等表格的「描述」列常含 `<a href>`（如「详见[签名]」「[应用授权概述]」「错误码解决方案外链」）。直接 `cell.innerText` 会丢 href、只剩文字。
-- 解法（`fetch.cjs` 的 `cellMd`）：遍历单元格 childNodes，把 `<a href>` 转成 `[文字](绝对URL)`（相对链接用 `new URL(href, location.href)` 补全），其余取文本。`tableToRows` 用 `cellMd` 替代 `innerText`。
-- 注意：业务参数走 `.paramsRow`/`renderParams`（非 table），其描述里的链接暂未做同等处理（见 §4）。
+### 2.11-bis 全文档超链接保留（统一前置 linkify）
+正文段落、表格描述列、业务参数描述里都常含 `<a href>`（「详见[签名]」「[应用授权概述]」「[支付渠道列表]」「账号类型链接」等）。直接 `innerText` / `textContent` 会丢 href、只剩文字。
+- 解法（`fetch.cjs`，提取前一步）：`a.querySelectorAll('a[href])` 遍历，把每个 `<a>` **替换成 Markdown 链接文本节点** `[文字](绝对URL)`（相对链接 `new URL(href, location.href)` 补全；`#`/`javascript:` 跳过）。这样后续文档页 `innerText`、`.paramsRow` 描述、表格 `cellMd` 都天然带上链接，一处解决全部位置。
+- **例外**：文字为「前往查看」的 `<a>` 不转，留作 API 公共错误码段的 `sec.link` 检测（E2 内联依赖它）。
+- `cellMd`（表格单元格）仍保留：负责 `<br>`→空格、空白归一；linkify 后单元格内已是文本节点，cellMd 直接读出含链接的文本。
 
 ### 2.12 噪音过滤（渲染层）
 会混进正文/段落文本、需要删除的标签：
@@ -141,7 +142,6 @@ API 参数默认展开（显示「收起所有属性」），但**枚举值**被
 - 代码块语言标识：文档页 CodeMirror 统一标 ```java（实际多为 Java/JSON，未逐块判定语言）；API 页按 `pre.language-*` 真实标注。
 - 未做增量/缓存（E3）；大批量抓取建议复用同一 browser 实例（CLI 已如此）。
 - 请求示例固定取 Java（E4 多语言示例可选未做）。
-- 业务参数（`.paramsRow` 层级列表）描述里的超链接暂未保留为 Markdown 链接（表格已保留，见 §2.11-bis）。
 - 跨平台代码已就绪（`npm root -g` + `path.join` 解析 chromium、curl→fetch 兜底下图），但仅 macOS 实测过。
 
 > 已消解的局限（v0.3）：异常示例响应已抓（E1，`fetch.cjs` 点「异常示例」tab）；公共错误码已内联（E2，CLI 惰性抓 `common/02km9f` 缓存后内联，见 `render.cjs` 的 `commonErrorTables`）。

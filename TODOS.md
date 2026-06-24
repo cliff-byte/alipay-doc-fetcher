@@ -9,7 +9,6 @@
 - [ ] **E4 多语言示例可选**：加 `--lang`，支持 Python/PHP 等语言栈开发者取对应请求示例（当前固定 Java）。
 
 ### P3 — 打磨
-- [ ] **业务参数描述链接**：表格单元格内的超链接已保留（`cellMd`），但 `.paramsRow` 业务参数描述（`renderParams`）里的 `<a>` 仍只剩文字。如需一致，给 `parseRow` 的 desc 提取也做 `<a>`→Markdown 链接转换。
 - [ ] **T9 魔法数具名化**：`fetch.cjs` 中 300（展开上限）、2500/1000/180（等待）、滚动步长 8 等抽为具名常量或可配置。
 - [ ] **headingify 过度匹配**：`render.cjs` 的数字标题启发式会把 "3 X 24 小时" 这类乘法表达误判为标题（`<50` 字守卫拦不住短串）。
   - 现状：已有单测固定当前行为（`render.test.cjs`）。改进需更稳的启发式且不回归已验证的 12 篇文档，故需配套重新验证。
@@ -17,6 +16,8 @@
 ## 已完成
 
 ### v0.3 — 能力增强
+- [x] **全文档超链接保留**（v0.3.2）：提取前统一 `linkify`，把 `<a href>` 转 `[文字](绝对URL)`，覆盖正文/表格/业务参数描述；「前往查看」保留供 E2 检测。
+- [x] **表格单元格链接**（v0.3.1）：`cellMd` 把表格内 `<a>` 转 Markdown 链接。
 - [x] **E1** 抓异常示例响应：`fetch.cjs` 点「异常示例」tab，与正常 JSON 去重后注入，渲染 `### 响应示例-异常`。
 - [x] **E2** 内联公共错误码：CLI 惰性抓 `common/02km9f` 缓存，`render.cjs` 用 `opts.commonErrorTables` 内联表格替代外链。
 - [x] **E5** 跨平台：`loadChromium` 用 `npm root -g`+`path.join`；`downloadImage` curl→node fetch 兜底（实测对 nlark 图床有效）。
