@@ -29,6 +29,8 @@ npm install && npx playwright install chromium
 
 之后在任一支持的 Agent 里，直接说「把这篇支付宝文档抓到本地：<链接>」即可触发。
 
+> **产物落点**：抓取结果默认落到你**当前项目**下的 `./alipay-docs/`（建议按产品分子目录），**不会**写进 skill 安装目录。全局安装时，工具会拒绝把产物写入 `~/.claude|.codex|.cursor/skills/...` 自身目录。
+
 > 各 Agent 的 skills 目录：Claude Code `~/.claude/skills/`、Codex `~/.codex/skills/`、Cursor `~/.cursor/skills/`（Cursor 也兼容读取前两者）。
 
 ## 直接当 CLI 用
@@ -49,13 +51,15 @@ npm install && npx playwright install chromium
 
 抓单篇：
 ```bash
-node scripts/fetch-alipay-docs.cjs --url "https://opendocs.alipay.com/open/07kszv" --name 01-权限集介绍 --out ./output
+node scripts/fetch-alipay-docs.cjs --url "https://opendocs.alipay.com/open/07kszv" --name 01-权限集介绍 --out ./alipay-docs/消费者投诉
 ```
 
 批量（推荐）：
 ```bash
-node scripts/fetch-alipay-docs.cjs --config examples/urls.example.json --out ./output
+node scripts/fetch-alipay-docs.cjs --config examples/urls.example.json --out ./alipay-docs/消费者投诉
 ```
+
+> `--out` 缺省为当前目录下的 `./alipay-docs`。作为全局安装的 Skill 使用时，请在你的项目目录下用脚本绝对路径调用，详见上方 SKILL.md 指引。
 
 `config` 为 JSON 数组：
 ```json

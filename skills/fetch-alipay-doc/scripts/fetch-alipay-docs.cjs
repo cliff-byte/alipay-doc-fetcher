@@ -16,6 +16,7 @@ const path = require('path');
 const { execFileSync } = require('child_process');
 const { loadChromium, fetchDoc } = require('./lib/fetch.cjs');
 const { renderMarkdown } = require('./lib/render.cjs');
+const { isInsideGlobalSkillDir } = require('./lib/paths.cjs');
 
 function parseArgs(argv) {
   const a = {};
@@ -40,10 +41,8 @@ function downloadImage(url, dest) {
 
 async function main() {
   const args = parseArgs(process.argv);
-  const outDir = path.resolve(args.out || './output');
-  const imgDir = path.join(outDir, 'images');
-  fs.mkdirSync(imgDir, { recursive: true });
 
+  // 先校验参数，再落盘，避免误操作时创建空目录
   let jobs = [];
   if (args.config) {
     jobs = JSON.parse(fs.readFileSync(args.config, 'utf8'));
@@ -53,6 +52,19 @@ async function main() {
     console.error('用法：--url <url> [--name <文件名>] | --config <urls.json>  [--out <目录>]');
     process.exit(1);
   }
+
+  // 默认落到当前项目下的 ./alipay-docs（相对 cwd），而非 skill 安装目录
+  const outDir = path.resolve(args.out || './alipay-docs');
+
+  // 护栏：若通过 skills 全局安装（~/.claude|.codex|.cursor|.agents/skills/...），拒绝把产物写进 skill 自身目录
+  const skillRoot = path.resolve(__dirname, '..');
+  if (isInsideGlobalSkillDir(outDir, skillRoot)) {
+    console.error(`✗ 拒绝把文档写入 Skill 安装目录：\n    ${outDir}\n  这是全局安装的 Skill 目录，抓取产物应落到你的项目里。\n  请在你的项目目录下运行，并用 --out 指定，例如：--out ./alipay-docs/<产品名>`);
+    process.exit(1);
+  }
+
+  const imgDir = path.join(outDir, 'images');
+  fs.mkdirSync(imgDir, { recursive: true });
 
   const chromium = loadChromium();
   const browser = await chromium.launch({ headless: true });

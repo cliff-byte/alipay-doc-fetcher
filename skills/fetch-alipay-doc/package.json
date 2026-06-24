@@ -7,7 +7,7 @@
   },
   "scripts": {
     "fetch": "node scripts/fetch-alipay-docs.cjs",
-    "test": "node --test scripts/lib/render.test.cjs scripts/lib/fetch.test.cjs",
+    "test": "node --test scripts/lib/render.test.cjs scripts/lib/fetch.test.cjs scripts/lib/paths.test.cjs",
     "postinstall": "echo '请执行: npx playwright install chromium'"
   },
   "dependencies": {

@@ -14,22 +14,25 @@ description: 抓取支付宝开放平台文档（opendocs.alipay.com / opendoc.a
 
 ## 怎么用
 
-1. 进入本 Skill 目录（含 `scripts/fetch-alipay-docs.cjs`）。首次使用先确保依赖就绪：
+设本 Skill 安装目录为 `$SKILL`（如 `~/.claude/skills/fetch-alipay-doc`，Codex 为 `~/.codex/skills/...`，Cursor 为 `~/.cursor/skills/...`）。
+
+1. **首次使用**：在 `$SKILL` 下装一次依赖（仅一次，与运行目录无关）：
    ```bash
-   npm install && npx playwright install chromium   # 若已全局安装 playwright 可跳过
+   (cd "$SKILL" && npm install && npx playwright install chromium)   # 若已全局安装 playwright 可跳过
    ```
 
-2. 收集要抓的 URL。多篇时写一个 config JSON（`[{ "name": "...", "url": "..." }]`），`name` 决定输出文件名（可省略，缺省用页面 H1）。参考 `examples/urls.example.json`。
+2. 收集要抓的 URL。多篇时写一个 config JSON（`[{ "name": "...", "url": "..." }]`），`name` 决定输出文件名（可省略，缺省用页面 H1）。参考 `$SKILL/examples/urls.example.json`。
 
-3. 运行（在本 Skill 目录下）：
+3. **在用户当前项目目录下运行**（用绝对路径调脚本，产物落到项目内、对用户可见）。**不要 `cd` 进 `$SKILL` 再跑**——那会把文档写进 skill 安装目录（工具会拒绝）。输出用 `--out` 指定到项目内，按产品/主题分目录：
    ```bash
    # 单篇
-   node scripts/fetch-alipay-docs.cjs --url "<支付宝文档URL>" --name "<文件名>" --out ./output
+   node "$SKILL/scripts/fetch-alipay-docs.cjs" --url "<支付宝文档URL>" --name "<文件名>" --out ./alipay-docs/<产品名>
    # 批量
-   node scripts/fetch-alipay-docs.cjs --config urls.json --out ./output
+   node "$SKILL/scripts/fetch-alipay-docs.cjs" --config urls.json --out ./alipay-docs/<产品名>
    ```
+   > node 解析 playwright 依赖是从脚本文件位置找 `node_modules`，与运行目录无关，所以站在项目目录用绝对路径调用即可。
 
-4. 产出在 `--out` 目录：`<name>.md` + `images/`。
+4. 产出在 `--out` 目录：`<name>.md` + `images/`。`--out` 缺省为当前目录下的 `./alipay-docs`。
 
 ## 关键原则
 - **忠实**：正文文字必须 100% 来自页面，禁止虚构 / 总结 / 改写 / 解读。工具只做机械格式化。
