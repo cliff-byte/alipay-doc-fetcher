@@ -25,7 +25,11 @@ function loadChromium() {
  *   - API 接口页：返回 { type:'api', intro, sections:[{title,text,params,tables,pres,link}] }
  */
 async function fetchDoc(page, url) {
-  await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
+  // 健壮导航：domcontentloaded 快速可靠；再等 article 渲染；networkidle 仅尽力而为
+  // （轮询型 SPA 常永不触发 networkidle，原先 waitUntil:'networkidle' 会因此 60s 超时整篇失败）
+  await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.waitForSelector('article', { timeout: 30000 });
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
   await page.waitForTimeout(2500);
 
   // 1) 滚动遍历，触发懒加载（CodeMirror 代码块、隐藏 table 等用 IntersectionObserver 懒渲染）

@@ -4,12 +4,6 @@
 
 ## 待做（已评审、未排期）
 
-### P2 — 硬化补完
-- [ ] **T10 抓取重试 / networkidle 健壮性**：`fetchDoc` 用 `waitUntil:'networkidle'`，对持续轮询的 SPA 偶发 60s 超时（e2e 实测命中）。当前已正确报失败+非零退出，但成功率受影响。考虑：改 `domcontentloaded` + 显式等正文出现，或对超时做 1~2 次自动重试。
-- [ ] **T4 输入校验**：`--config` 校验为数组且每项含合法 url（畸形给清晰错误而非栈）；`--url` 限 `opendocs/opendoc` 域名，非支付宝域名给警告。
-  - 动机：系统边界必校验；当前畸形 config 直接 `JSON.parse` 崩栈。
-- [ ] **T5 文件名碰撞防护**：同名 H1 当前会静默覆盖 `.md`。沿用图片去重思路，重复 name 追加 `-2`/`-3`。
-
 ### P2 — 能力增强（评审中暂缓）
 - [ ] **E3 增量/缓存**：按 URL + 内容指纹跳过未变页，大批量/反复抓取省时，并减轻对支付宝服务器压力。
 - [ ] **E4 多语言示例可选**：加 `--lang`，支持 Python/PHP 等语言栈开发者取对应请求示例（当前固定 Java）。
@@ -19,7 +13,14 @@
 - [ ] **headingify 过度匹配**：`render.cjs` 的数字标题启发式会把 "3 X 24 小时" 这类乘法表达误判为标题（`<50` 字守卫拦不住短串）。
   - 现状：已有单测固定当前行为（`render.test.cjs`）。改进需更稳的启发式且不回归已验证的 12 篇文档，故需配套重新验证。
 
-## 已完成（本轮 P1）
-- [x] **T1** `render.cjs` 纯函数单测（24 例：mdTable / headingify / parseDesc / renderParams / renderMarkdown）。
+## 已完成
+
+### v0.2 — 可靠性补完
+- [x] **T10** 抓取健壮性：导航改 `domcontentloaded` + 等 `article` + networkidle 仅尽力而为；CLI 加 `fetchWithRetry`（2 次）。修掉 networkidle 偶发 60s 超时。
+- [x] **T4** 输入校验：`lib/validate.cjs`（`parseConfig` / `validateUrl` / `isAlipayDocUrl`），畸形 config / 非法 URL 给清晰错误而非崩栈，非支付宝域名告警。
+- [x] **T5** 文件名防撞：`lib/util.cjs` 的 `uniqueName`，同名追加 `-2`/`-3`，不再静默覆盖。
+
+### v0.1 — P1 硬化
+- [x] **T1** `render.cjs` 纯函数单测（mdTable / headingify / parseDesc / renderParams / renderMarkdown）。
 - [x] **T2** 消灭静默失败：失败篇目汇总 + 图片缺失累计告警 + 任一失败 `process.exitCode=1`。
 - [x] **T3** DOM 漂移合理性断言：`sanityWarnings` 抓后自检，产出异常稀少时显式告警。

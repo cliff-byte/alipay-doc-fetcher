@@ -17,6 +17,8 @@ const { execFileSync } = require('child_process');
 const { loadChromium, fetchDoc } = require('./lib/fetch.cjs');
 const { renderMarkdown } = require('./lib/render.cjs');
 const { isInsideGlobalSkillDir } = require('./lib/paths.cjs');
+const { slug, uniqueName } = require('./lib/util.cjs');
+const { parseConfig, validateUrl, isAlipayDocUrl } = require('./lib/validate.cjs');
 
 function parseArgs(argv) {
   const a = {};
@@ -27,8 +29,15 @@ function parseArgs(argv) {
   return a;
 }
 
-function slug(s) {
-  return (s || 'doc').replace(/[\/\\:*?"<>|]/g, '').replace(/\s+/g, '-').slice(0, 60);
+// 抓取重试：networkidle 等导航对轮询型 SPA 偶发超时，失败时换新页面重试，提升成功率
+async function fetchWithRetry(browser, url, attempts = 2) {
+  let lastErr;
+  for (let i = 1; i <= attempts; i++) {
+    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+    try { const data = await fetchDoc(page, url); await page.close().catch(() => {}); return data; }
+    catch (e) { lastErr = e; await page.close().catch(() => {}); }
+  }
+  throw lastErr;
 }
 
 // node 的 https 对部分支付宝图床（cdn.nlark.com）会失败，统一用 curl 更稳
@@ -42,15 +51,26 @@ function downloadImage(url, dest) {
 async function main() {
   const args = parseArgs(process.argv);
 
-  // 先校验参数，再落盘，避免误操作时创建空目录
+  // 先校验参数，再落盘，避免误操作时创建空目录。校验失败给清晰错误而非崩栈。
   let jobs = [];
-  if (args.config) {
-    jobs = JSON.parse(fs.readFileSync(args.config, 'utf8'));
-  } else if (args.url) {
-    jobs = [{ url: args.url, name: args.name || null }];
-  } else {
-    console.error('用法：--url <url> [--name <文件名>] | --config <urls.json>  [--out <目录>]');
+  try {
+    if (args.config) {
+      jobs = parseConfig(fs.readFileSync(args.config, 'utf8'));
+    } else if (args.url) {
+      validateUrl(args.url); // 非法 URL 直接抛
+      jobs = [{ url: args.url, name: args.name || null }];
+    } else {
+      console.error('用法：--url <url> [--name <文件名>] | --config <urls.json>  [--out <目录>]');
+      process.exit(1);
+    }
+  } catch (e) {
+    console.error(`✗ 参数错误：${e.message}`);
     process.exit(1);
+  }
+
+  // 域名提醒：非支付宝文档域名大概率抓不到正文
+  for (const j of jobs) {
+    if (!isAlipayDocUrl(j.url)) console.warn(`⚠ 非支付宝文档域名，可能抓不到正文：${j.url}`);
   }
 
   // 默认落到当前项目下的 ./alipay-docs（相对 cwd），而非 skill 安装目录
@@ -69,20 +89,19 @@ async function main() {
   const chromium = loadChromium();
   const browser = await chromium.launch({ headless: true });
   const downloaded = new Set();
+  const usedNames = new Set();  // 文件名防撞：同名 H1 不再静默覆盖
   const failed = [];     // { url, reason } —— 抓取失败的篇目
   const imgFails = [];   // 'name-idx.png' —— 下载失败、不会出现在 Markdown 里的图片
   let okCount = 0, warnCount = 0;
 
   for (const job of jobs) {
-    const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     let data;
-    try { data = await fetchDoc(page, job.url); }
-    catch (e) { console.error(`✗ ${job.url}\n  ${e.message}`); failed.push({ url: job.url, reason: e.message }); await page.close(); continue; }
-    await page.close();
+    try { data = await fetchWithRetry(browser, job.url); }
+    catch (e) { console.error(`✗ ${job.url}\n  ${e.message}`); failed.push({ url: job.url, reason: e.message }); continue; }
 
     if (data.error) { console.error(`✗ ${job.url}: ${data.error}`); failed.push({ url: job.url, reason: data.error }); continue; }
 
-    const name = slug(job.name || data.h1);
+    const name = uniqueName(slug(job.name || data.h1), usedNames);
     data.url = job.url; data.name = name;
 
     // 下载文档页正文图片（失败的累计进 imgFails，不再静默丢弃）
