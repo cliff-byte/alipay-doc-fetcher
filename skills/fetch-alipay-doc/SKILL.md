@@ -1,6 +1,6 @@
 ---
 name: fetch-alipay-doc
-description: 把支付宝开放平台文档（opendocs.alipay.com / opendoc.alipay.com）抓成本地 Markdown，供编程 Agent 离线查阅。当用户要获取/下载/本地化支付宝 API 文档、接入指南、错误码或产品文档，粘贴 opendocs/opendoc 链接想要其内容，或发现 WebFetch/curl 抓支付宝文档只得到空正文时使用。
+description: 获取支付宝开放平台（opendocs.alipay.com、opendoc.alipay.com）文档并保存为本地 Markdown。支付宝文档站是 JS 渲染的 SPA，WebFetch/curl 只能拿到空白正文——所以只要用户想要任何支付宝开放平台文档的正文内容，就用本技能，不要尝试直接用 WebFetch/curl 抓。触发场景：用户要抓取/下载/保存/本地化支付宝的 API 接口文档、接入指南、错误码页或产品文档为 md（存进项目 docs、离线在 IDE/Cursor 查阅），或粘贴 opendocs/opendoc 链接、给出文档 ID（如 07kszv、02km9f）或接口名（如 alipay.trade.fastpay.refund.query）并想要其内容；单篇或批量均适用。不要用于：调接口写业务代码、排查支付报错、配置沙箱、注册应用、整理本地已有 md 文件、下载图片素材。
 ---
 
 # 抓取支付宝开放平台文档
