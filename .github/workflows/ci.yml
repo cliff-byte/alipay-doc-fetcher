@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node: [18, 20, 22]
+        node: [24]
     defaults:
       run:
         working-directory: skills/fetch-alipay-doc

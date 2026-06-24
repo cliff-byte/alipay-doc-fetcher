@@ -1,12 +1,12 @@
 <h1 align="center">ALIPAY-DOC-FETCHER</h1>
 
 <p align="center">
-  <a href="https://github.com/cliff-byte/alipay-doc-fetcher/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/cliff-byte/alipay-doc-fetcher/actions/workflows/ci.yml/badge.svg"></a>&nbsp;<img alt="Node" src="https://img.shields.io/badge/node-%3E%3D18-339933?logo=node.js&logoColor=white">&nbsp;<img alt="Playwright" src="https://img.shields.io/badge/Playwright-%5E1.40-2EAD33?logo=playwright&logoColor=white">&nbsp;<img alt="curl" src="https://img.shields.io/badge/runtime-curl-073551?logo=curl&logoColor=white">&nbsp;<img alt="Agent Skill" src="https://img.shields.io/badge/Agent%20Skill-npx%20skills-5A4FCF">&nbsp;<img alt="License" src="https://img.shields.io/badge/license-MIT-green">
+  <a href="https://github.com/cliff-byte/alipay-doc-fetcher/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/cliff-byte/alipay-doc-fetcher/actions/workflows/ci.yml/badge.svg"></a>&nbsp;<img alt="Node" src="https://img.shields.io/badge/node-%3E%3D24-339933?logo=node.js&logoColor=white">&nbsp;<img alt="Playwright" src="https://img.shields.io/badge/Playwright-%5E1.40-2EAD33?logo=playwright&logoColor=white">&nbsp;<img alt="curl" src="https://img.shields.io/badge/runtime-curl-073551?logo=curl&logoColor=white">&nbsp;<img alt="Agent Skill" src="https://img.shields.io/badge/Agent%20Skill-npx%20skills-5A4FCF">&nbsp;<img alt="License" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
 把 JS 渲染的**支付宝开放平台文档**（`opendocs.alipay.com` / `opendoc.alipay.com`）抓取为对**编程 Agent 友好**的 Markdown —— 含标准代码块、层级化接口参数、表格、本地图片。
 
-> 依赖：**Node ≥ 18**、**Playwright**（`^1.40`，需 `npx playwright install chromium`）、系统 **curl**（图片下载）。
+> 依赖：**Node ≥ 24**、**Playwright**（`^1.40`，需 `npx playwright install chromium`）、系统 **curl**（图片下载）。
 
 ## 为什么需要它
 

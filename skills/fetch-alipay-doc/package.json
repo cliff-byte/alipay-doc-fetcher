@@ -27,7 +27,7 @@
   "author": "cliff-byte",
   "license": "MIT",
   "engines": {
-    "node": ">=18"
+    "node": ">=24"
   },
   "bin": {
     "alipay-doc-fetcher": "./scripts/fetch-alipay-docs.cjs"
