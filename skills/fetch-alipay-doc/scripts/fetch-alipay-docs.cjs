@@ -57,25 +57,29 @@ async function main() {
   const chromium = loadChromium();
   const browser = await chromium.launch({ headless: true });
   const downloaded = new Set();
+  const failed = [];     // { url, reason } —— 抓取失败的篇目
+  const imgFails = [];   // 'name-idx.png' —— 下载失败、不会出现在 Markdown 里的图片
+  let okCount = 0, warnCount = 0;
 
   for (const job of jobs) {
     const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
     let data;
     try { data = await fetchDoc(page, job.url); }
-    catch (e) { console.error(`✗ ${job.url}\n  ${e.message}`); await page.close(); continue; }
+    catch (e) { console.error(`✗ ${job.url}\n  ${e.message}`); failed.push({ url: job.url, reason: e.message }); await page.close(); continue; }
     await page.close();
 
-    if (data.error) { console.error(`✗ ${job.url}: ${data.error}`); continue; }
+    if (data.error) { console.error(`✗ ${job.url}: ${data.error}`); failed.push({ url: job.url, reason: data.error }); continue; }
 
     const name = slug(job.name || data.h1);
     data.url = job.url; data.name = name;
 
-    // 下载文档页正文图片
+    // 下载文档页正文图片（失败的累计进 imgFails，不再静默丢弃）
     if (data.type === 'doc') {
       for (const im of (data.imgs || [])) {
         const fn = `${name}-${im.idx}.png`;
         const ok = downloadImage(im.src, path.join(imgDir, fn));
         if (ok) downloaded.add(fn);
+        else imgFails.push(fn);
       }
     }
 
@@ -85,10 +89,22 @@ async function main() {
       ? `doc, ${(data.imgs || []).length} 图, ${(data.codes || []).length} 代码块, ${(data.tables || []).length} 表`
       : `api, ${data.sections.length} 段`;
     console.log(`✓ ${name}.md  (${summary})`);
+    okCount++;
+    // DOM 漂移合理性告警（来自 fetchDoc 的 sanityWarnings）
+    for (const w of (data.warnings || [])) { console.warn(`  ⚠ ${name}: ${w}`); warnCount++; }
   }
 
   await browser.close();
-  console.log(`\n完成。输出目录：${outDir}`);
+
+  // 汇总 + 退出码：任何抓取失败或图片缺失都让进程非零退出，杜绝"静默部分失败"
+  const parts = [`✓ ${okCount} 成功`];
+  if (failed.length) parts.push(`✗ ${failed.length} 失败`);
+  if (imgFails.length) parts.push(`⚠ ${imgFails.length} 图缺失`);
+  if (warnCount) parts.push(`⚠ ${warnCount} 内容告警`);
+  console.log(`\n完成：${parts.join(' / ')}。输出目录：${outDir}`);
+  if (failed.length) { console.error('失败篇目：'); failed.forEach(f => console.error(`  - ${f.url}  (${f.reason})`)); }
+  if (imgFails.length) console.error(`图片缺失（未写入 Markdown）：${imgFails.join(', ')}`);
+  if (failed.length || imgFails.length) process.exitCode = 1;
 }
 
 main().catch(e => { console.error(e); process.exit(1); });

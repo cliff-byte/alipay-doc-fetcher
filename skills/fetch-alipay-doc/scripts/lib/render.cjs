@@ -114,4 +114,5 @@ function renderMarkdown(data, opts = {}) {
   return head.join('\n') + '\n' + body + '\n';
 }
 
-module.exports = { renderMarkdown };
+// 同时导出内部纯函数，便于单测（不影响 CLI 用法）
+module.exports = { renderMarkdown, mdTable, headingify, parseDesc, renderParams };

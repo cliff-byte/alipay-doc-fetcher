@@ -74,6 +74,19 @@ output/
 - **文档页**（指南/说明类）：正文 + 标题分层（`##`/`###`）+ 代码块 + 表格 + 内联图片。
 - **API 接口页**：通用按 H2 分段；业务参数渲染为**层级列表**（含嵌套子属性、枚举值），公共参数/错误码渲染为**表格**，请求示例取 **Java** 代码块、响应取 JSON。
 
+## 测试
+
+`render.cjs`（结构化数据 → Markdown）与 `fetch.cjs` 的产出自检是纯函数，有零依赖单测（`node:test`）：
+
+```bash
+cd skills/fetch-alipay-doc && npm test
+```
+
+## 可靠性
+
+- 抓取失败的篇目会在结尾**汇总**，图片下载失败会**显式告警**，任一失败进程**非零退出**（便于自动化/CI 感知，不再静默部分失败）。
+- 抓完做 **DOM 漂移合理性自检**：产出异常稀少（疑似支付宝改版导致选择器失效）时打印告警，而非静默吐残缺文档。
+
 ## 设计原则：忠实
 
 正文文字 100% 来自页面渲染结果，不虚构、不总结、不改写、不解读。工具只做机械格式化。
@@ -87,8 +100,10 @@ skills/fetch-alipay-doc/          # 自包含 Skill（npx skills 自动探测并
 ├── scripts/
 │   ├── fetch-alipay-docs.cjs     # CLI 入口（编排浏览器、下载图片、落盘）
 │   └── lib/
-│       ├── fetch.cjs             # 抓取 + 页面内结构化提取
-│       └── render.cjs            # 结构化数据 → Markdown
+│       ├── fetch.cjs             # 抓取 + 页面内结构化提取 + 产出自检
+│       ├── render.cjs            # 结构化数据 → Markdown
+│       ├── fetch.test.cjs        # 单测（sanityWarnings）
+│       └── render.test.cjs       # 单测（渲染纯函数）
 └── examples/urls.example.json
 
 PLAYBOOK.md                       # 维护者经验手册（仓库根，不随 Skill 安装分发）

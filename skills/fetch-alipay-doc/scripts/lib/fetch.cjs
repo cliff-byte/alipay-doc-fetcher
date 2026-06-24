@@ -68,7 +68,7 @@ async function fetchDoc(page, url) {
   } catch (e) {}
 
   // 4) 页面内结构化提取（自包含，不引用 node 作用域）
-  return page.evaluate(() => {
+  const data = await page.evaluate(() => {
     const NBSP = String.fromCharCode(160);
     const a = document.querySelector('article');
     if (!a) return { error: 'no <article> found' };
@@ -167,6 +167,36 @@ async function fetchDoc(page, url) {
     }
     return { type: 'api', h1: H1, upd, proxy, intro, sections };
   });
+
+  // 5) DOM 漂移合理性断言：站点改版会让选择器静默失效、产出空/残缺文档而不报错。
+  //    抓完即自检，把"静默退化"变成显式告警。
+  if (data && !data.error) data.warnings = sanityWarnings(data);
+  return data;
 }
 
-module.exports = { loadChromium, fetchDoc };
+/**
+ * 产出合理性自检（纯函数，可单测）。返回告警字符串数组，空数组表示正常。
+ * 触发条件刻意保守，只在"几乎肯定是抓取失败"时告警，避免对正常的短文档误报。
+ */
+function sanityWarnings(data) {
+  const w = [];
+  if (!data || data.error) return w;
+  if (data.type === 'doc') {
+    const textLen = (data.text || '').replace(/@@\w+@@/g, '').trim().length;
+    const n = (data.codes || []).length + (data.tables || []).length + (data.imgs || []).length;
+    if (textLen < 200 && n === 0) {
+      w.push('文档页内容异常稀少（正文 <200 字且无代码/表格/图片），疑似 DOM 选择器失效或页面未渲染完成');
+    }
+  } else if (data.type === 'api') {
+    const secs = data.sections || [];
+    if (!secs.length) {
+      w.push('API 页未提取到任何 H2 分段，疑似页面结构变化');
+    } else {
+      const hasParamsOrTable = secs.some(s => (s.params && s.params.length) || (s.tables && s.tables.length));
+      if (!hasParamsOrTable) w.push('API 页有分段但未提取到任何参数/表格，疑似 paramsRow / table 选择器失效');
+    }
+  }
+  return w;
+}
+
+module.exports = { loadChromium, fetchDoc, sanityWarnings };
